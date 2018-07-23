@@ -1,0 +1,23 @@
+#!/bin/bash  
+
+echo "setting up Netspoc test enviroment"
+cd ~
+echo "get Netspoc"
+git clone https://github.com/hknutzen/Netspoc
+echo "get Netspoc-Web"
+git clone https://github.com/hknutzen/Netspoc-Web
+echo "perlbrew setup"
+\curl -L https://install.perlbrew.pl | bash
+perl5/perlbrew/bin/perlbrew init
+source ~/perl5/perlbrew/etc/bashrc
+perlbrew install 5.24.0
+perlbrew switch 5.24.0
+perlbrew install-cpanm
+
+# add "source ~/perl5/perlbrew/etc/bashrc" and "$PERL5LIB=~/Netspoc/lib" to .bashrc
+./bashrc_adder.sh
+# install perl modules
+./install_perl_modules.sh
+# installs extjs4 and silk-icons into htdocs folder
+./install_htdocs.sh
+echo "done"

@@ -1,0 +1,155 @@
+
+This document is a guide for installing configuring everything needed 
+to test Netspoc-Web.
+There is a bash script "setup_script.sh" which does most of the following
+steps automatically.
+
+
+
+Netspoc and Netspoc-Web:
+Download from "https://github.com/hknutzen/Netspoc" and
+"https://github.com/hknutzen/Netspoc-Web".
+	
+	git clone https://github.com/hknutzen/Netspoc
+	git clone https://github.com/hknutzen/Netspoc-Web
+
+
+
+Perlbrew:
+To use Perl 5.24.0 and keep the system Perl untouched, 
+install Perlbrew from "https://perlbrew.pl/" via curl or wget.
+	
+	\curl -L https://install.perlbrew.pl | bash
+or
+	\wget -O - https://install.perlbrew.pl | bash
+
+after that initialize Perlbrew
+
+	perl5/perlbrew/bin/perlbrew init
+	source ~/perl5/perlbrew/etc/bashrc
+
+Install Perl version 5.24.0 and use this version.
+	
+	perlbrew install 5.24.0
+	perlbrew switch 5.24.0
+
+Install cpanm to install Perl modules
+
+	perlbrew install-cpanm
+
+
+
+Install the following Perl modules:
+(or let the script "install_perl_modules.sh" do it)
+	
+	cpanm Archive::Zip
+	cpanm CGI::Session
+	cpanm Crypt::SaltedHash
+	cpanm Digest::MD5
+	cpanm Digest::SHA
+	cpanm Encode
+	cpanm File::Path
+	cpanm File::Spec
+	cpanm Getopt::Long
+	cpanm HTML::Strip
+	cpanm IPC::Run3
+	cpanm JSON::XS
+	cpanm List::Util
+	cpanm Net::LDAP
+	cpanm NetAddr::IP::Util
+	cpanm parent
+	cpanm Plack::Test::Server
+	cpanm Plack::Middleware::XForwardedFor
+	cpanm Regexp::IPv6
+	cpanm String::MkPasswd
+	cpanm Template
+	cpanm Test::Selenium::Remote::Driver
+	cpanm Test::More
+	cpanm Test::Differences
+	cpanm Text::Template
+	cpanm Time::HiRes
+	cpanm XML::XPath
+	cpanm Cpanel::JSON::XS
+
+
+
+htdocs:
+Netspoc-Web needs Sencha Ext JS GPL 4.2.1.883 and the icon set Silk.
+Make a new folder htdocs and install those into it
+Sencha extjs4 - https://github.com/xantus/ext-js-gpl
+Silk icon set - http://www.famfamfam.com/lab/icons/silk/
+(or let the script "install_htdocs.sh" do it)
+
+	mkdir htdocs
+	cd htdocs
+
+	git clone https://github.com/xantus/ext-js-gpl
+
+	mkdir silk-icons 
+	cd silk-icons
+
+	wget http://www.famfamfam.com/lab/icons/silk/famfamfam_silk_icons_v013.zip
+
+unzip famfamfam_silk_icons_v013.zip in silk-icons
+
+
+
+Configure apache:
+Change httpd.conf (usually found /etc/httpd/conf/httpd.conf)
+
+uncomment
+
+	LoadModule proxy_module modules/mod_proxy.so
+	LoadModule proxy_http_module modules/mod_proxy_http.so	
+
+add
+	
+	Alias /extjs4 path/to/htdocs/extjs4
+	Alias /silk-icons path/to/htdocs/silk-icons-1.3
+	Alias /daniel4 path/to/Netspoc-Web
+	ProxyPass /daniel4/backend http://localhost:5001 retry=0
+
+restart apache after that
+
+	systemctl restart httpd.service
+
+
+
+Selenium:
+Download the Selenium Standalone Server from https://www.seleniumhq.org/download/
+
+
+
+Before testing:
+
+Add these two lines to ".bashrc" or input them every time in the shell
+to run tests
+	
+	source ~/perl5/perlbrew/etc/bashrc
+	export PERL5LIB=~/Netspoc/lib/
+
+Start a Selenium server in another shell
+	
+	java -jar /"path to"/selenium-server-standalone.jar
+
+
+
+Test:
+Tests need to be run within the folder Netspoc-Web
+	cd /path/to/Netspoc-Web/
+try
+	prove
+which runs all .t files within Netspoc-Web/t/
+or one by one
+	perl t/login.t
+	perl t/search-ip.t
+	..
+
+
+
+A few things might still have to be changed initially:
+
+path/to/Netspoc/bin/export-netspoc -> first line direct to perlbrew perl
+path/to/Netspoc-Web/t/PolicyWeb/Init.pm -> line 244-252 change paths to your folder locations
+path/to/Netspoc-Web/t/PolicyWeb/Init.pm -> line 207 remove "-export_ipv6"
+path/to/Netspoc-Web/t/cleanup_daily.t -> 116
