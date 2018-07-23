@@ -48,6 +48,12 @@ my $driver = Test::Selenium::Remote::Driver->new(
 
 $driver->get( 'index.html' );
 
+my $a = $driver->find_element_ok( '//input[@name="email"]', "xpath", "found input box:  email" );
+my $b = $driver->find_element_ok( '//input[@name="pass"]', "xpath", "found input box:   password" );
+my $c = $driver->find_element_ok( '//input[@value="Login"]', "xpath", "found button:    login");
+if ( $a && $b && $c ){
+    
+} 
 
 $driver->find_element_ok( '//input[@name="email"]', "xpath",
                           "Eingabefeld für Email vorhanden" );

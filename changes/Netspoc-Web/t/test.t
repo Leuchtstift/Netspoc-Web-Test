@@ -46,6 +46,7 @@ $driver->get( 'index.html' );
 
 if (find_login()){
 	# wrong user data
+
 	login('not_guest', 'password');
 	
 	ok($driver->get_current_url() =~ /backend\/login/ , "refused false login credentials");
@@ -55,7 +56,6 @@ if (find_login()){
 	login("guest");
 	ok($driver->get_page_source() =~ /Fehler/ == 0, "successfully logged in as guest");
 
-	print $driver->get_current_url()."\n";
 	choose_owner('x');
 	
 
