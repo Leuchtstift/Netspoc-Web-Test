@@ -16,6 +16,6 @@ my $driver = Test::Selenium::Remote::Driver->new(
 $driver->get('index.html');
 
 eval { for ( ;; ) { print $driver->get_active_element()->get_attribute('id') . "\n"; sleep 1; } } 
-or do { print "browser closed\n"; };
+or do { print "whoopsi, or browser closed\n"; };
 
 $driver->quit();

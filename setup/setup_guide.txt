@@ -77,7 +77,8 @@ htdocs:
 Netspoc-Web needs Sencha Ext JS GPL 4.2.1.883 and the icon set Silk.
 Make a new folder htdocs and install those into it
 Sencha extjs4 - https://github.com/xantus/ext-js-gpl
-Silk icon set - http://www.famfamfam.com/lab/icons/silk/
+Silk icon set (1) - http://www.famfamfam.com/lab/icons/silk/
+Silk icon set (2) -https://damieng.com/creative/icons/silk-companion-1-icons
 (or let the script "install_htdocs.sh" do it)
 
 	mkdir htdocs
@@ -86,11 +87,15 @@ Silk icon set - http://www.famfamfam.com/lab/icons/silk/
 	git clone https://github.com/xantus/ext-js-gpl
 
 	mkdir silk-icons 
-	cd silk-icons
 
 	wget http://www.famfamfam.com/lab/icons/silk/famfamfam_silk_icons_v013.zip
 
 unzip famfamfam_silk_icons_v013.zip in silk-icons
+
+	wget https://download.damieng.com/iconography/SilkCompanion1.zip
+
+unzip SilkCompanion.zip
+Move all icons from silk-icons 1.3 and SilkCompanion into the folder "silk-icons"
 
 
 

@@ -26,14 +26,10 @@ our @EXPORT = qw(
 sub find_top_buttons {
     my ($driver) = @_;
     $driver->find_element_ok('btn_services_tab', "found button:\tservices tab");
-    $driver->find_element_ok('btn_own_networks_tab',
-                                                     "found button:\town networks tab");
+    $driver->find_element_ok('btn_own_networks_tab', "found button:\town networks tab");
     $driver->find_element_ok('btn_diff_tab', "found button:\tdiff tab");
-    $driver->find_element_ok('btn_entitlement_tab',
-                                                     "found button:\tentitlement tab");
-
-    $driver->find_element_ok('//div[text()="Stand"]', 'xpath',
-                                                     "found text:\t'Stand'");
+    $driver->find_element_ok('btn_entitlement_tab', "found button:\tentitlement tab");
+    $driver->find_element_ok('//div[text()="Stand"]', 'xpath', "found text:\t'Stand'");
 
     # historycombo...
     # -> button zum auswaehlen usw
@@ -97,18 +93,15 @@ sub login_as_guest_and_choose_owner {
 
 sub get_grid_cell_value_by_field_name {
     my ($driver, $grid_id, $row, $field_name) = @_;
-    my $script
-            = "return Ext.getCmp(\"$grid_id\").getStore().getAt($row).get('$field_name');";
+    my $script = "return Ext.getCmp(\"$grid_id\").getStore().getAt($row).get('$field_name');";
     return $driver->execute_script($script);
 }
 
 sub get_grid_cell_value_by_row_and_column_index {
     my ($driver, $grid_id, $row, $col) = @_;
-    my $script
-            = "return Ext.getCmp(\"$grid_id\").headerCt.columnManager.columns[$col].dataIndex;";
+    my $script = "return Ext.getCmp(\"$grid_id\").headerCt.columnManager.columns[$col].dataIndex;";
     my $field_name = $driver->execute_script($script);
-    return $driver->get_grid_cell_value_by_field_name($grid_id, $row,
-                                                                                                        $field_name);
+    return $driver->get_grid_cell_value_by_field_name($grid_id, $row, $field_name);
 }
 
 sub select_grid_row_by_index {
@@ -129,21 +122,15 @@ sub select_combobox_item {
 
     my $id_string = $driver->execute_script($combo_trigger_id);
 
-    $driver->click_element_ok($id_string, 'id',
-                                                        "Clicked on owner combo open trigger");
+    $driver->click_element_ok($id_string, 'id', "Clicked on owner combo open trigger");
 
     my $list_id = $driver->execute_script($dropdown_id);
 
     #Create a relative xpath to the boundlist item
-    my $li
-            = "//div[contains(\@id,'"
-            . $list_id
-            . "')]//li[contains(text(),'"
-            . $item . "')]";
+    my $li = "//div[contains(\@id,'" . $list_id . "')]//li[contains(text(),'" . $item . "')]";
 
     #Select the dropdown item
-    $driver->click_element_ok($li, 'xpath',
-                                                        "Selected item $item from combo box");
+    $driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
 }
 
 sub ip2numeric {

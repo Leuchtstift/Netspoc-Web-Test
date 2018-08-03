@@ -36,7 +36,7 @@ prepare_runtime();
 #
 ##############################################################################
 
-$driver->set_implicit_wait_timeout(100);
+$driver->set_implicit_wait_timeout(200);
 $driver->login_as_guest_and_choose_owner( 'x' );
 
 
@@ -48,7 +48,7 @@ $driver->login_as_guest_and_choose_owner( 'x' );
 ##############################################################################
 
 my $service_grid = wait_until { $driver->find_element('grid_services' ) };
-sleep(0.2);
+
 $driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
           
 my $elements = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
@@ -76,10 +76,8 @@ ok( $driver->click(), 'Select service "Test4"' );
 
 #my $cb = $driver->find_element( '//label[text()="User expandieren"]/preceding-sibling::input[@type="checkbox"]', 'xpath' );
 
-sleep(0.2);
 $driver->click_element_ok( 'cb_expand_users', 'id', 'Click on checkbox "User expandieren"' );
 
-sleep(0.2);
 my $value = $driver->get_grid_cell_value_by_field_name( 'grid_rules', 0, 'src' );
 #die Dumper( $value );
 #my $value = $driver->get_grid_cell_value_by_row_and_column_index( 'grid_rules', 0, 1 );

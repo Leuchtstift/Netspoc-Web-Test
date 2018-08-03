@@ -2,13 +2,13 @@
 use strict;
 use warnings;
 use lib 't';
-use Test::More;
+use Test::More;    #tests => 28;
 use Test::Selenium::Remote::Driver;
+use Selenium::Remote::WebElement;
 use PolicyWeb::Init qw/$SERVER $port/;
 use PolicyWeb::FrontendTest;
 
 #use Selenium::Remote::Driver;
-#use Selenium::Remote::WebElement;
 #use Selenium::ActionChains;
 #use Selenium::Waiter;
 #use Data::Dumper;
@@ -19,7 +19,13 @@ use PolicyWeb::FrontendTest;
 # Test description:
 # -----------------
 #
-#	todo: write description
+# - go to tab "Eigene Netze"
+# - check buttons and grid header beeing present
+# - check sytax of grids
+#	- check correct resources are displayed after selecting networks
+# - check selection and cancel mechanic is functioning properly
+#			button changes and
+#			services are correctly displayed in services tab
 #
 ##############################################################################
 
@@ -28,20 +34,26 @@ PolicyWeb::Init::prepare_runtime_no_login();
 
 my $driver =
 		PolicyWeb::FrontendTest->new(
-														 browser_name   => 'chrome',
-														 proxy          => { proxyType => 'direct', },
-														 default_finder => 'id',
-														 javascript     => 1,
-														 base_url => "http://$SERVER:$port/index.html",
-														 extra_capabilities => { nativeEvents => 'false' }
+														browser_name   => 'chrome',
+														proxy          => { proxyType => 'direct', },
+														default_finder => 'id',
+														javascript     => 1,
+														base_url => "http://$SERVER:$port/index.html",
+														extra_capabilities => { nativeEvents => 'false' },
 		);
 
+$driver->set_implicit_wait_timeout(200);
 $driver->login_as_guest_and_choose_owner('x');
 
-if (!$driver->PolicyWeb::FrontendTest::find_top_buttons()) { BAIL_OUT("tab buttons missing"); }
+if (!$driver->PolicyWeb::FrontendTest::find_top_buttons()) {
+	BAIL_OUT("tab buttons missing");
+}
 
 my $b_own_networks = $driver->find_element('btn_own_networks_tab');
 $b_own_networks->click;
+
+# todo: bessere lösung als folgende finden
+#ok(eval{$driver->find_element('//div[text()="Netzauswaahl"]', 'xpath')},"found text:\t'Netzauswahl'");
 
 $driver->find_element_ok('//div[text()="Netzauswahl"]', 'xpath',
 												 "found text:\t'Netzauswahl'");
@@ -84,12 +96,8 @@ ok(is_order_after_change(\$grid, \4, \1, \@grid_head_left, \0),
 
 # back to standart
 $grid_head_left[1]->click;
-@grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
 
-# find grid for network resources
-#gridview-1074-body
-#my $r_grid = $driver->find_element('//*[contains(@id, "networkresources") and contains(@id, "body")]',
-#																	 'xpath');
+@grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
 
 my $r_grid = $driver->find_element('//*[contains(@id, "networkresources")]',
 																	 'xpath');
@@ -158,15 +166,47 @@ $driver->find_child_element($r_grid, '//div[contains(@id, "network:Big")]',
 ok(grid_cointains(\$r_grid, \3, \1, \@names),
 	 "networkresources are corret while network:Big is collapsed");
 
-#	print_table($r_grid);
-
 $driver->find_element('btn_cancel_network_selection')->click;
 
 ok($driver->find_child_elements($r_grid, 'x-grid-cell', 'class'),
 	 "network selection canceled");
 
+my $bont_b
+		= $driver->find_element('btn_own_networks_tab')->get_text
+		=~ "Eigene Netze"
+		and $driver->find_element('btn_own_networks_tab')
+		->Selenium::Remote::WebElement::get_attribute('class')
+		=~ /icon-computer_connect/;
+
+#should be disabled
+my $boncc_b = $driver->find_element('btn_confirm_network_selection')
+		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+$boncc_b &= $driver->find_element('btn_cancel_network_selection')
+		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+
 select_by_name(\@grid_cells, \4, \2, \"network:KUNDE1");
+
+#should be enabled
+$boncc_b &= !($driver->find_element('btn_confirm_network_selection')
+			->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+$boncc_b &= !($driver->find_element('btn_cancel_network_selection')
+			->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+
 $driver->find_element('btn_confirm_network_selection')->click;
+
+#only confirm should be disabled
+$boncc_b &= $driver->find_element('btn_confirm_network_selection')
+		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+$boncc_b &= !($driver->find_element('btn_cancel_network_selection')
+			->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+
+#'Eigene Netze' should've changed to 'Ausgewählte Netze'
+$bont_b
+		&= $driver->find_element('btn_own_networks_tab')->get_text
+		=~ "Ausgew.hlte Netze"
+		and $driver->find_element('btn_own_networks_tab')
+		->Selenium::Remote::WebElement::get_attribute('class')
+		=~ /icon-exclamation/;
 
 $driver->find_element('btn_services_tab')->click;
 
@@ -183,13 +223,29 @@ $driver->find_element('btn_own_networks_tab')->click;
 
 $driver->find_element('btn_cancel_network_selection')->click;
 
+#should return to standard
+$boncc_b &= $driver->find_element('btn_confirm_network_selection')
+		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+$boncc_b &= $driver->find_element('btn_cancel_network_selection')
+		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+$bont_b
+		= $driver->find_element('btn_own_networks_tab')->get_text
+		=~ "Eigene Netze"
+		and $driver->find_element('btn_own_networks_tab')
+		->Selenium::Remote::WebElement::get_attribute('class')
+		=~ /icon-computer_connect/;
+
+ok($bont_b, "button own network tab changed name and icon correctly");
+ok(
+	$boncc_b,
+	"buttons confirm and cancel network selection changed disabled status correctly"
+);
+
 $driver->find_element('btn_services_tab')->click;
 
 @service_grid =
 		$driver->find_child_elements($driver->find_element('grid_services'),
 																 'x-grid-cell', 'class');
-
-#map { print $_->get_text . "\n" } @service_grid;
 
 ok((scalar @service_grid == 12), "found services:\tall 12");
 
@@ -205,9 +261,6 @@ ok((scalar @service_grid == 12), "found services:\tall 12");
 done_testing();
 
 $driver->quit();
-
-
-
 
 sub print_table {
 	my ($origin, $empty) = @_;
@@ -250,7 +303,7 @@ sub grid_cointains {
 	my @grid_cells
 			= $driver->find_child_elements($grid_parent, 'x-grid-cell', 'class');
 
-	if (scalar @grid_cells eq 0) {
+	if (!scalar @grid_cells) {
 		print "grid is empty\n";
 		return 0;
 	}
@@ -266,8 +319,10 @@ sub grid_cointains {
 			print "------------\n"
 					. $grid_cells[ $i + $offset ]->get_text
 					. "\n------------\n";
+			return 0;
 		}
-		$ok eq 1 || return 0;
+
+		#		$ok eq 1 || return 0;
 	}
 	return 1;
 }
@@ -299,7 +354,7 @@ sub check_sytax_grid {
 	my $offset     = ${ (shift) };
 	my @regex      = @{ (shift) };
 
-	if (scalar @grid_cells eq 0) {
+	if (!scalar @grid_cells) {
 		print "grid is empty\n";
 		return 0;
 	}
