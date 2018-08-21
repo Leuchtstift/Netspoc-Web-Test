@@ -38,7 +38,6 @@ my $driver =
 														proxy          => { proxyType => 'direct', },
 														default_finder => 'id',
 														javascript     => 1,
-														base_url => "http://$SERVER:$port/index.html",
 														extra_capabilities => { nativeEvents => 'false' },
 		);
 
@@ -259,7 +258,6 @@ ok((scalar @service_grid == 12), "found services:\tall 12");
 #}
 
 done_testing();
-
 $driver->quit();
 
 sub print_table {

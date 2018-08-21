@@ -59,23 +59,7 @@ sub login {
 
 sub login_as_guest {
     my $driver = shift;
-
     $driver->login('guest');
-
-=head
-    my $base_url = "http://$SERVER:$port/index.html";
-    $driver->get( $base_url );
-
-    $driver->find_element( '//input[@name="email"]', "xpath" );
-    $driver->find_element( '//input[@name="pass"]' , "xpath" );
-
-    $driver->send_keys_to_active_element('guest');
-
-    my $login_button = $driver->find_element( '//input[@value="Login"]', "xpath" );
-
-    $login_button->click();
-=cut
-
 }
 
 sub login_as_guest_and_choose_owner {
