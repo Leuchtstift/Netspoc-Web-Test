@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More;
+use Test::More tests => 6;
 use Selenium::Remote::Driver;
 use Selenium::Firefox::Profile;
 use Selenium::Remote::WDKeys;

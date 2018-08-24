@@ -106,7 +106,8 @@ sub select_combobox_item {
 
     my $id_string = $driver->execute_script($combo_trigger_id);
 
-    $driver->click_element_ok($id_string, 'id', "Clicked on owner combo open trigger");
+    #$driver->click_element_ok($id_string, 'id', "Clicked on owner combo open trigger");
+    $driver->find_element($id_string, 'id')->click;
 
     my $list_id = $driver->execute_script($dropdown_id);
 
@@ -114,7 +115,8 @@ sub select_combobox_item {
     my $li = "//div[contains(\@id,'" . $list_id . "')]//li[contains(text(),'" . $item . "')]";
 
     #Select the dropdown item
-    $driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
+    #$driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
+    $driver->find_element($li, 'xpath')->click;
 }
 
 sub ip2numeric {

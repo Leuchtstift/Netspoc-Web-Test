@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use lib 't';
-use Test::More;    #tests => 28;
+use Test::More tests => 28;
 use Test::Selenium::Remote::Driver;
 use Selenium::Remote::WebElement;
 use PolicyWeb::Init qw/$SERVER $port/;
@@ -316,6 +316,7 @@ sub grid_cointains {
 		if (!$ok) {
 			print "------------\n"
 					. $grid_cells[ $i + $offset ]->get_text
+					. "\n does not eqal any search item"
 					. "\n------------\n";
 			return 0;
 		}
