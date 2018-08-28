@@ -44,7 +44,7 @@ my $driver =
 $driver->set_implicit_wait_timeout(200);
 $driver->login_as_guest_and_choose_owner('x');
 
-if (!$driver->PolicyWeb::FrontendTest::find_top_buttons()) {
+if (!$driver->find_top_buttons()) {
 	BAIL_OUT("tab buttons missing");
 }
 
@@ -73,7 +73,7 @@ my @regex = (
 				 '(network)|(interface):\.*', 'x|y|z'
 );
 
-ok(check_sytax_grid(\@grid_cells, \4, \1, \@regex),
+ok($driver->check_sytax_grid(\@grid_cells, \4, \1, \@regex),
 	 "own networks grid looks fine");
 
 # find grid head
@@ -90,7 +90,7 @@ my @grid_head_right = $driver->find_child_elements($grid_heads[1],
 ok(@grid_head_left,  "found header:\tleft grid");
 ok(@grid_head_right, "found header:\tright grid");
 
-ok(is_order_after_change(\$grid, \4, \1, \@grid_head_left, \0),
+ok($driver->is_order_after_change(\$grid, \4, \1, \@grid_head_left, \0),
 	 "own networks grid order changes correctly");
 
 # back to standart
@@ -114,7 +114,7 @@ my @resources_grid
 ok(!@resources_grid, "no networkresources, if no network is selected");
 
 # select network 'Big' and 'Kunde'
-select_by_name(\@grid_cells, \4, \2, \"network:Big");
+$driver->select_by_name(\@grid_cells, \4, \2, \"network:Big");
 
 ok($driver->find_element('x-grid-group-hd', 'class')->get_text
 			 =~ /network:Big/,
@@ -123,15 +123,15 @@ ok($driver->find_element('x-grid-group-hd', 'class')->get_text
 
 my @names
 		= ('host:B10', 'host:Range', 'interface:asa.Big', 'interface:u.Big');
-ok(grid_cointains(\$r_grid, \3, \1, \@names),
+ok($driver->grid_contains(\$r_grid, \3, \1, \@names),
 	 "networkresources are corret for network:Big");
 
 $grid_head_right[1]->click;
 
-ok(is_order_after_change(\$r_grid, \3, \0, \@grid_head_right, \1),
+ok($driver->is_order_after_change(\$r_grid, \3, \0, \@grid_head_right, \1),
 	 "resources grid order changes correctly");
 
-select_by_name(\@grid_cells, \4, \2, \"network:Kunde");
+$driver->select_by_name(\@grid_cells, \4, \2, \"network:Kunde");
 
 ok($driver->find_element('x-grid-group-hd', 'class')->get_text
 			 =~ /network:Big/,
@@ -141,7 +141,7 @@ ok($driver->find_element('x-grid-group-hd', 'class')->get_text
 # grid should now contain more
 push(@names, ('host:k', 'interface:asa.Kunde'));
 
-ok(grid_cointains(\$r_grid, \3, \1, \@names),
+ok($driver->grid_contains(\$r_grid, \3, \1, \@names),
 	 "networkresources are corret for network:Big and network:Kunde");
 
 # for checking correct syntax
@@ -153,7 +153,7 @@ my @res_reg = (
 # reload grid
 @resources_grid
 		= $driver->find_child_elements($r_grid, 'x-grid-cell', 'class');
-ok(check_sytax_grid(\@resources_grid, \3, \0, \@res_reg),
+ok($driver->check_sytax_grid(\@resources_grid, \3, \0, \@res_reg),
 	 "resources grids looks fine");
 
 $driver->find_child_element($r_grid, '//div[contains(@id, "network:Big")]',
@@ -162,7 +162,7 @@ $driver->find_child_element($r_grid, '//div[contains(@id, "network:Big")]',
 # grid should now contain less
 @names = ('host:k', 'interface:asa.Kunde');
 
-ok(grid_cointains(\$r_grid, \3, \1, \@names),
+ok($driver->grid_contains(\$r_grid, \3, \1, \@names),
 	 "networkresources are corret while network:Big is collapsed");
 
 $driver->find_element('btn_cancel_network_selection')->click;
@@ -183,7 +183,7 @@ my $boncc_b = $driver->find_element('btn_confirm_network_selection')
 $boncc_b &= $driver->find_element('btn_cancel_network_selection')
 		->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
 
-select_by_name(\@grid_cells, \4, \2, \"network:KUNDE1");
+$driver->select_by_name(\@grid_cells, \4, \2, \"network:KUNDE1");
 
 #should be enabled
 $boncc_b &= !($driver->find_element('btn_confirm_network_selection')
@@ -260,147 +260,12 @@ ok((scalar @service_grid == 12), "found services:\tall 12");
 done_testing();
 $driver->quit();
 
-sub print_table {
-	my ($origin, $empty) = @_;
 
-	my @table = $driver->find_child_elements($origin, './/*', 'xpath');
-	print !$empty . "\n";
-	if (!$empty) {
-		@table = grep { $_->get_text =~ /(.|\s)*\S(.|\s)*/ } @table;
-	}
-	print "-----\ntable size: " . scalar @table . "\n";
-	for (my $i = 0; $i < @table; $i++) {
-		print "->\t$i: $table[$i]\n";
-		print $table[$i]->get_text . "\n";
-	}
-	print "\n-----\n";
-}
 
-sub select_by_name {
-	my @grid_cells = @{ (shift) };
-	my $line       = ${ (shift) };
-	my $offset     = ${ (shift) };
-	my $name       = ${ (shift) };
 
-	for (my $i = $line; $i < @grid_cells; $i += $line) {
-		my $a = $grid_cells[ $i + $offset ]->get_text;
-		if ($a eq $name) {
-			$grid_cells[$i]->click;
-			return;
-		}
-	}
-	BAIL_OUT("$name not found");
-}
 
-sub grid_cointains {
-	my $grid_parent = ${ (shift) };
-	my $line        = ${ (shift) };
-	my $offset      = ${ (shift) };
-	my @search      = @{ (shift) };
 
-	my @grid_cells
-			= $driver->find_child_elements($grid_parent, 'x-grid-cell', 'class');
 
-	if (!scalar @grid_cells) {
-		print "grid is empty\n";
-		return 0;
-	}
 
-	for (my $i = 0; $i < @grid_cells; $i += $line) {
-		my $ok = 0;
-		for (my $j = 0; $j < @search; $j++) {
-			if ($grid_cells[ $i + $offset ]->get_text eq $search[$j]) {
-				$ok = 1;
-			}
-		}
-		if (!$ok) {
-			print "------------\n"
-					. $grid_cells[ $i + $offset ]->get_text
-					. "\n does not eqal any search item"
-					. "\n------------\n";
-			return 0;
-		}
 
-		#		$ok eq 1 || return 0;
-	}
-	return 1;
-}
 
-sub is_grid_in_order {
-	my @grid_cells = @{ (shift) };
-	my $line       = ${ (shift) };
-	my $order      = ${ (shift) };
-	my $column     = ${ (shift) };
-
-	for (my $i = $line; $i < @grid_cells; $i += $line) {
-
-		#		print "i: ".$i."\n";
-		my $a = $grid_cells[ $i + $column ]->get_text;
-		my $b = $grid_cells[ $i + $column - $line ]->get_text;
-		if (($a cmp $b) eq $order) {
-			print "('$a' cmp '$b') ne '$order'\n";
-			return 0;
-		}
-	}
-
-	return 1;
-
-}
-
-sub check_sytax_grid {
-	my @grid_cells = @{ (shift) };
-	my $line       = ${ (shift) };
-	my $offset     = ${ (shift) };
-	my @regex      = @{ (shift) };
-
-	if (!scalar @grid_cells) {
-		print "grid is empty\n";
-		return 0;
-	}
-
-	for (my $i = $offset; $i < @grid_cells; $i += $line) {
-		for (my $j = 0; $j < scalar @regex; $j++) {
-			if (!eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ }) {
-				return 0;
-			}
-		}
-	}
-	return 1;
-}
-
-# check if order is correct after sorting them
-sub is_order_after_change {
-	my $grid        = ${ (shift) };
-	my $line        = ${ (shift) };
-	my $offset      = ${ (shift) };
-	my @grid_heads  = @{ (shift) };
-	my $head_offset = ${ (shift) };
-
-	# check if order is correct
-	# first column
-	my @grid_cells
-			= $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-	is_grid_in_order(\@grid_cells, \$line, \-1, \$offset)
-			|| (return 0);
-	$grid_heads[ $offset + $head_offset ]->click;
-
-	# grid has to be reloaded
-	@grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-	is_grid_in_order(\@grid_cells, \$line, \1, \$offset)
-			|| (return 0);
-
-	for (my $i = $offset + 1; $i < $line; $i++) {
-
-		$grid_heads[ $i + $head_offset ]->click;
-		@grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-		is_grid_in_order(\@grid_cells, \$line, \-1, \$i)
-				|| (return 0);
-
-		$grid_heads[ $i + $head_offset ]->click;
-		@grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-		is_grid_in_order(\@grid_cells, \$line, \1, \$i)
-				|| (return 0);
-	}
-
-	return 1;
-}

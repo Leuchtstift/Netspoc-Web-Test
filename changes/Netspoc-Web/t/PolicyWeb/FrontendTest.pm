@@ -148,4 +148,159 @@ sub error {
     print STDERR @_, "\n";
 }
 
+# nur zum gucken
+sub print_table {
+    my ($driver, $origin, $empty) = @_;
+
+    my @table = $driver->find_child_elements($origin, './/*', 'xpath');
+    if (!$empty) {
+        @table = grep { $_->get_text =~ /(.|\s)*\S(.|\s)*/ } @table;
+    }
+    print "-----\ntable size: " . scalar @table . "\n";
+    for (my $i = 0; $i < @table; $i++) {
+        print "->\t$i: $table[$i]\n";
+        print $table[$i]->get_text . "\n";
+    }
+    print "\n-----\n";
+}
+
+
+sub select_by_name {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my $name       = ${ (shift) };
+
+    for (my $i = $row; $i < @grid_cells; $i += $row) {
+        my $a = $grid_cells[ $i + $offset ]->get_text;
+        if ($a eq $name) {
+            $grid_cells[$i]->click;
+            return;
+        }
+    }
+    BAIL_OUT("$name not found");
+}
+
+sub grid_contains {
+    my $driver      = shift;
+    my $grid_parent = ${ (shift) };
+    my $row         = ${ (shift) };
+    my $offset      = ${ (shift) };
+    my @search      = @{ (shift) };
+
+    my @grid_cells
+            = $driver->find_child_elements($grid_parent, 'x-grid-cell', 'class');
+
+    if (!scalar @grid_cells) {
+        print "grid is empty\n";
+        return 0;
+    }
+
+    for (my $i = 0; $i < @search; $i++) {
+        my $ok = 0;
+        for (my $j = 0; $j < @grid_cells; $j += $row) {
+            if ($grid_cells[ $j + $offset ]->get_text eq $search[$i]) {
+                $ok = 1;
+            }
+        }
+        if (!$ok) {
+            print "------------\n"
+                    . $search[ $i + $offset ]->get_text
+                    . "\n is not equal to any item"
+                    . "\n------------\n";
+            return 0;
+        }
+
+        #       $ok eq 1 || return 0;
+    }
+    return 1;
+}
+
+
+
+sub is_grid_in_order {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my $order      = ${ (shift) };
+    my $column     = ${ (shift) };
+
+    for (my $i = $offset; $i < @grid_cells; $i += $row) {
+
+        #       print "i: ".$i."\n";
+        my $a = $grid_cells[ $i + $column ]->get_text;
+        my $b = $grid_cells[ $i + $column - $row ]->get_text;
+        if (($a cmp $b) eq $order) {
+            print "('$a' cmp '$b') ne '$order'\n";
+            return 0;
+        }
+    }
+
+    return 1;
+
+}
+
+sub check_sytax_grid {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my @regex      = @{ (shift) };
+
+    if (!scalar @grid_cells) {
+        print "grid is empty\n";
+        return 0;
+    }
+
+    for (my $i = $offset; $i < @grid_cells; $i += $row) {
+        for (my $j = 0; $j < scalar @regex; $j++) {
+            if (!eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ }) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+
+# check if order is correct after sorting them
+sub is_order_after_change {
+    my $driver      = shift;
+    my $grid        = ${ (shift) };
+    my $row         = ${ (shift) };
+    my $column      = ${ (shift) };
+    my @grid_heads  = @{ (shift) };
+    my $offset      = ${ (shift) };
+
+    # check if order is correct
+    # first column
+    my @grid_cells
+            = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
+    $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \-1, \$column)
+            || (return 0);
+    $grid_heads[ $column + $offset ]->click;
+
+    # grid has to be reloaded
+    @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
+    $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \1, \$column)
+            || (return 0);
+
+    for (my $i = $column + 1; $i < $row; $i++) {
+
+        $grid_heads[ $i + $offset ]->click;
+        @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
+        $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \-1, \$i)
+                || (return 0);
+
+        $grid_heads[ $i + $offset ]->click;
+        @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
+        $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \1, \$i)
+                || (return 0);
+    }
+
+    return 1;
+}
+
 1;
