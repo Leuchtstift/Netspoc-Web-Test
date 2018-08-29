@@ -256,7 +256,7 @@ sub check_sytax_grid {
 
     for (my $i = $offset; $i < @grid_cells; $i += $row) {
         for (my $j = 0; $j < scalar @regex; $j++) {
-            if (!eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ }) {
+            if (!eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ } ) {
                 return 0;
             }
         }

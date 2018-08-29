@@ -71,33 +71,64 @@ sub test4{
 		$panel, '//*[(text()="Namen statt IPs")and not(contains(@class, "x-form-cb-checked"))]',"xpath"), 
 		"found checkbox:\t'Namen statt IPs' (unchecked)");
 
-# Zeug 
-# über 
-# den 
-# Grid
-# fehlt
-# !
+	#####
+
+	# service details
+
+	my $details = $driver->find_child_element($panel, './/div[contains(@id, "servicedetails")]', 'xpath');
+
+	ok($details->get_text =~ 'Name:\sBeschreibung:\sVerantwortung:', "found panel:\tservice details");
+
+	my @pseudo_input = $driver->find_child_elements($details, './/input[not(contains(@id, "hidden"))]', 'xpath');
+	#for (my $i = 0; $i < @pseudo_input; $i++) { print "$i: ". $pseudo_input[$i]->get_attribute('id'). ", " . $pseudo_input[$i]->get_value . "\n"; }
+	ok($pseudo_input[0]->get_value eq 'Test4', "Name:\tTest4");
+	ok($pseudo_input[1]->get_value eq 'Your foo', "Beschreibung:\tYour foo");
+	ok($pseudo_input[2]->get_value eq 'y', "Verantwortung:\ty");
+
+	#####
 
 	my $grid = $driver->find_child_element($panel, 'grid_rules');
 	my @gch = $driver->find_child_elements($grid, './/*[contains(@class, "x-column-header") and not(contains(@id, "El"))]', 'xpath');
 	my @gcc = $driver->find_child_elements($grid, './/td', 'xpath');
-	for (my $i = 0; $i < @gch; $i++) { print "$i: ". $gch[$i]->get_attribute('id'). ", " . $gch[$i]->get_text . "\n"; }
-	for (my $i = 0; $i < @gcc; $i++) { print "$i: ". $gcc[$i]->get_attribute('id'). ", " . $gcc[$i]->get_text . "\n"; }
+	#for (my $i = 0; $i < @gch; $i++) { print "$i: ". $gch[$i]->get_attribute('id'). ", " . $gch[$i]->get_text . "\n"; }
+	#for (my $i = 0; $i < @gcc; $i++) { print "$i: ". $gcc[$i]->get_attribute('id'). ", " . $gcc[$i]->get_text . "\n"; }
 	
+	#####
+	
+	# check header	
+	my $is_ok = 1;
+	$is_ok &= $gch[0]->get_text eq "Aktion"; 
+	$is_ok &= $gch[1]->get_text eq "Quelle"; 
+	$is_ok &= $gch[2]->get_text eq "Ziel"; 
+	$is_ok &= $gch[3]->get_text eq "Protokoll"; 
+	ok($is_ok, "details grid header are correct");
+	
+	#####
+
+	# check syntax in grid
 	my @regex = ('permit', 'User', '(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)', '(udp|tcp)\s\d+');
-	my $is_ok = $driver->check_sytax_grid(\@gcc, \5, \0, \@regex);
+	$is_ok = 1;
+	$is_ok = $driver->check_sytax_grid(\@gcc, \5, \0, \@regex);
+	
 	$driver->find_child_element($panel, 'cb_expand_users')->click;	
 	#regex matches anschauen
-	$regex[1] = '((1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)(\-\/)(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)?)';
+	$regex[1] = '((1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)(\-\/(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d))?)';
+	@gcc = $driver->find_child_elements($grid, './/td', 'xpath');
+	$is_ok &= $driver->check_sytax_grid(\@gcc, \5, \0, \@regex);
+
+	$driver->find_child_element($panel, '//*[(text()="Namen statt IPs")]', 'xpath')->click;
+	$regex[1] = '(any:.+|network:.+|interface:.+|host:.+)';
+	$regex[2] = '(any:.+|network:.+|interface:.+|host:.+)';
 	@gcc = $driver->find_child_elements($grid, './/td', 'xpath');
 	$is_ok &= $driver->check_sytax_grid(\@gcc, \5, \0, \@regex);
 	
 	ok($is_ok, "detail grid syntax ok");
 
+	#####
+	
+	# Verantwortliche
 	my $omail = $driver->find_child_element($panel, 'ownerEmails');
-
-
-
+	
 }
 
 sub check_own_services_grid {

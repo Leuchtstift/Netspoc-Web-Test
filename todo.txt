@@ -1,0 +1,9 @@
+Todo:
+
+	-	test 'Search' tab from services
+	
+	-	Diff
+	
+	- switch Netspoc rule set
+	
+	- change password
