@@ -45,7 +45,7 @@ my @l_grid = check_own_services_grid($lp);
 
 test4($rp, \@l_grid, $r_btns[0], $r_btns[1]);
 
-
+search_tab();
 
 
 
@@ -54,7 +54,47 @@ sleep 2;
 done_testing();
 $driver->quit();
 
+sub search_tab{
+	$driver->find_element('btn_search_services')->click;
+	my $search_window = $driver->find_element('window_search');
+	if (!ok($search_window, "found search 'window'")){BAIL_OUT("no search window -> no search");}
+	ok($driver->find_child_element($search_window, 'txtf_search_ip1'					), "found input field:\tip1");
+	ok($driver->find_child_element($search_window, 'txtf_search_ip2'					), "found input field:\tip2");
+	ok($driver->find_child_element($search_window, 'txtf_search_proto'				), "found input field:\tprotocol");
+	ok($driver->find_child_element($search_window, 'cb_search_supernet'				), "found checkbox:\tsearch supernet");
+	ok($driver->find_child_element($search_window, 'cb_search_subnet'					), "found checkbox:\tsearch subnet");
+	ok($driver->find_child_element($search_window, 'cb_search_range'					), "found checkbox:\tsearch port range");
+	ok($driver->find_child_element($search_window, 'cb_search_own'						), "found checkbox:\tsearch own services");
+	ok($driver->find_child_element($search_window, 'cb_search_used'						), "found checkbox:\tsearch used services");
+	ok($driver->find_child_element($search_window, 'cb_search_usable'					), "found checkbox:\tsearch usable services");
+	ok($driver->find_child_element($search_window, 'checkbox_FOO'							), "found checkbox:\tsearch FOO");
+	ok($driver->find_child_element($search_window, 'cb_search_case_sensitive'	), "found checkbox:\tsearch case sensitive");
+	ok($driver->find_child_element($search_window, 'cb_search_exact'					), "found checkbox:\tsearch exact");
+	ok($driver->find_child_element($search_window, 'cb_search_keep_foreground'), "found checkbox:\tkeep search in foreground");
+	ok($driver->find_child_element($search_window, 'btn_search_start'					), "found button:\tstart search");
 
+
+	#$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('10.2.2.2');
+	#$driver->find_child_element($search_window,'btn_search_start')->click;
+	#my @find = $driver->find_child_elements($driver->find_element('grid_services-body'), './/tr', 'xpath');
+
+	my @search_tabs = $driver->find_child_elements($search_window, 'x-tab-inner', 'class');
+
+	$search_tabs[1]->click;
+	$driver->find_element('txtf_search_string-inputEl')->send_keys('asd');
+	$driver->find_child_element($search_window,'btn_search_start')->click;
+
+	$driver->find_element('//span[text()="OK"]', 'xpath')->click;
+	search_ok(0, "'asd' as search key leads to 0 elements");
+}
+
+sub search_ok{
+	my ($expected, $ok_text) = @_;
+	eval{
+	ok( scalar $driver->find_child_elements($driver->find_element('grid_services-body'), './/tr', 'xpath') eq $expected, $ok_text);
+	} or do {BAIL_OUT("no grid found");}
+
+}
 
 sub test4{
 	my $panel 	= shift;
@@ -81,9 +121,11 @@ sub test4{
 
 	my @pseudo_input = $driver->find_child_elements($details, './/input[not(contains(@id, "hidden"))]', 'xpath');
 	#for (my $i = 0; $i < @pseudo_input; $i++) { print "$i: ". $pseudo_input[$i]->get_attribute('id'). ", " . $pseudo_input[$i]->get_value . "\n"; }
-	ok($pseudo_input[0]->get_value eq 'Test4', "Name:\tTest4");
+	ok($pseudo_input[0]->get_value eq 'Test4', "Name:\t\tTest4");
 	ok($pseudo_input[1]->get_value eq 'Your foo', "Beschreibung:\tYour foo");
 	ok($pseudo_input[2]->get_value eq 'y', "Verantwortung:\ty");
+	$driver->find_child_element($details,'btn_switch_service_responsibility')->click;
+	ok($pseudo_input[2]->get_value eq 'z', "responsibility changed from y to z");
 
 	#####
 
@@ -127,8 +169,7 @@ sub test4{
 	#####
 	
 	# Verantwortliche
-	my $omail = $driver->find_child_element($panel, 'ownerEmails');
-	
+	ok($driver->find_child_element($panel, 'ownerEmails')->get_text =~ 'Verantwortliche\sf.r\sz\sguest', "found panel:\tresponsible email contact");
 }
 
 sub check_own_services_grid {
