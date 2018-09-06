@@ -8,6 +8,7 @@ use Selenium::Waiter qw/wait_until/;
 use PolicyWeb::Init;
 use PolicyWeb::FrontendTest;
 
+fail('test case missing');
 
 my $driver = PolicyWeb::FrontendTest->new(
               browser_name       => 'chrome',
@@ -21,6 +22,7 @@ prepare_export();
 prepare_runtime();
 $driver->set_implicit_wait_timeout(200);
 $driver->login_as_guest_and_choose_owner('x');
+
 
 #my $button = $driver->find_element('btn_services_tab-btnEl');
 #

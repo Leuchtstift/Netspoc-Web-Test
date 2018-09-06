@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use lib 't';
-use Test::More;    #tests => 5;
+use Test::More;# tests => 60;
 use Selenium::Remote::WDKeys;
 use Selenium::Waiter qw/wait_until/;
 use PolicyWeb::Init;
@@ -19,42 +19,53 @@ my $driver = PolicyWeb::FrontendTest->new(
 prepare_export();
 prepare_runtime();
 
-$driver->set_implicit_wait_timeout(200);
-$driver->login_as_guest_and_choose_owner('x');
+eval{
+	$driver->set_implicit_wait_timeout(200);
+#	print $driver->fullscreen_window;
+	$driver->login_as_guest_and_choose_owner('x');
+	
+	# left and right panel
+	my $lp;
+	my $rp;
+	eval {
+		$lp = $driver->find_element('pnl_services');
+		$rp = $driver->find_element('pnl_service_details');
+	} or do { BAIL_OUT("service tab panels not found\n$@"); };
+	# all buttons from the service tab
+	my @l_btns = $driver->find_child_elements($lp, 'x-btn-icon-el', 'class');
+	my @r_btns = $driver->find_child_elements($rp, 'x-btn-icon-el', 'class');
+	
+	# cannot check further without buttons
+	if (!check_service_buttons(\@l_btns, \@r_btns)) 
+	{BAIL_OUT("buttons are missing");}
+	
+	# go to own services tab
+	#$l_btns[0]->click;
+	$driver->move_click($l_btns[0]);
+	
+	my @l_grid = check_own_services_grid($lp);
+	
+	service_details($rp, \@l_grid, $r_btns[0], $r_btns[1]);
+	
+	search_tab();
+	
+	done_testing();
+};
 
-# left and right panel
-my $lp;
-my $rp;
-eval {
-	$lp = $driver->find_element('grid_services');
-	$rp = $driver->find_element('//div[contains(@id, "cardprintactive")]', 'xpath');
-} or do { BAIL_OUT("service tab panels not found\n$@"); };
+if ($@){print $@ . "\n";}
 
-# all buttons from the service tab
-my @l_btns = $driver->find_child_elements($lp, 'x-btn-icon-el', 'class');
-my @r_btns = $driver->find_child_elements($rp, 'x-btn-icon-el', 'class');
-
-# cannot check further without buttons
-if (!check_service_buttons(\@l_btns, \@r_btns)) 
-{BAIL_OUT("buttons are missing");}
-
-# go to own services tab
-$l_btns[0]->click;
-
-my @l_grid = check_own_services_grid($lp);
-
-test4($rp, \@l_grid, $r_btns[0], $r_btns[1]);
-
-search_tab();
-
-
-
-sleep 2;
-
-done_testing();
 $driver->quit();
 
+
 sub search_tab{
+
+# -------------	
+# Todo:
+# (Nutzbare)
+#	Portranges
+# Befristete Dienste
+# -------------
+
 	$driver->find_element('btn_search_services')->click;
 	my $search_window = $driver->find_element('window_search');
 	if (!ok($search_window, "found search 'window'")){BAIL_OUT("no search window -> no search");}
@@ -67,36 +78,146 @@ sub search_tab{
 	ok($driver->find_child_element($search_window, 'cb_search_own'						), "found checkbox:\tsearch own services");
 	ok($driver->find_child_element($search_window, 'cb_search_used'						), "found checkbox:\tsearch used services");
 	ok($driver->find_child_element($search_window, 'cb_search_usable'					), "found checkbox:\tsearch usable services");
-	ok($driver->find_child_element($search_window, 'checkbox_FOO'							), "found checkbox:\tsearch FOO");
+	ok($driver->find_child_element($search_window, 'checkbox_FOO'							), "found checkbox:\tsearch FOO"); # temporary services
 	ok($driver->find_child_element($search_window, 'cb_search_case_sensitive'	), "found checkbox:\tsearch case sensitive");
 	ok($driver->find_child_element($search_window, 'cb_search_exact'					), "found checkbox:\tsearch exact");
 	ok($driver->find_child_element($search_window, 'cb_search_keep_foreground'), "found checkbox:\tkeep search in foreground");
 	ok($driver->find_child_element($search_window, 'btn_search_start'					), "found button:\tstart search");
 
+	$driver->find_child_element($search_window, 'cb_search_keep_foreground')->click;
+	$driver->find_child_element($search_window, 'cb_search_used')->click;
+	$driver->find_child_element($search_window, 'cb_search_subnet')->click;
+	
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('10.2.2.2');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(4, "IP 1 = '10.2.2.2'\t=> 4 services");
 
-	#$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('10.2.2.2');
-	#$driver->find_child_element($search_window,'btn_search_start')->click;
-	#my @find = $driver->find_child_elements($driver->find_element('grid_services-body'), './/tr', 'xpath');
+	if (!ok($search_window->is_displayed, "keep search in foreground")){ BAIL_OUT("search window vanished:\n$@"); }
+
+	$driver->find_child_element($search_window, 'cb_search_supernet')->click;
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(8, "IP 1 = '10.2.2.2'\n\t& supernet\t\t=> 8 services");
+
+	$driver->find_child_element($search_window, 'txtf_search_ip2-inputEl')->send_keys('10.9.9.0');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(2, "IP 1 = '10.2.2.2'\n\tIP 2 = '10.9.9.0'\n\t& supernet\t\t=> 2 services");
+
+	$driver->find_child_element($search_window, 'txtf_search_proto-inputEl')->send_keys('83');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "IP 1 = '10.2.2.2'\n\tIP 2 = '10.9.9.0'\n\tProtokoll = 83\n\t& supernet\t\t=> 2 services");
+
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip2-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_proto-inputEl')->clear;
+	$driver->find_child_element($search_window, 'cb_search_supernet')->click;
+
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('sub1');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "IP 1 = 'sub1'\t\t=> 1 service");
+	
+	$driver->find_child_element($search_window, 'cb_search_case_sensitive')->click;
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(0, "IP 1 = 'sub1'\n\t& case sensitive\t=> 0 service");
+	# close popup
+	$driver->find_child_element($driver->find_element('x-message-box', 'class'), 'x-btn-button', 'class')->click_ok("popup closed:\t'Ihre Suche ergab keine Treffer!'");
+
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('Sub1');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "IP 1 = 'Sub1'\n\t& case sensitive\t=> 1 service");
+
+	$driver->find_child_element($search_window, 'cb_search_case_sensitive')->click;
+	$driver->find_child_element($search_window, 'cb_search_exact')->click;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('sub1');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(0, "IP 1 = 'sub1'\n\t& exact\t\t\t=> 0 service");
+	# close popup
+	$driver->find_child_element($driver->find_element('x-message-box', 'class'), 'x-btn-button', 'class')->click;
+
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('any:sub1');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "IP 1 = 'any:sub1'\n\t& exact\t\t\t=> 1 service");
+
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('10.1.0.0/16');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "IP 1 = '10.1.0.0/16'\t=> 1 service");
+
+	$driver->find_child_element($search_window, 'cb_search_subnet')->click;
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(11, "IP 1 = '10.1.0.0/16'\n\t& subnet\t\t=> 11 services");
+
+	$driver->find_child_element($search_window, 'cb_search_subnet')->click;
+	$driver->find_child_element($search_window, 'cb_search_exact')->click;
 
 	my @search_tabs = $driver->find_child_elements($search_window, 'x-tab-inner', 'class');
 
-	$search_tabs[1]->click;
-	$driver->find_element('txtf_search_string-inputEl')->send_keys('asd');
-	$driver->find_child_element($search_window,'btn_search_start')->click;
+	$search_tabs[1]->click_ok("switched to second search tab");
+	
+	$driver->find_element('txtf_search_string-inputEl')->send_keys('foo');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(2, "search key = 'foo'\n\t& description\t=> 2 elements");
 
-	$driver->find_element('//span[text()="OK"]', 'xpath')->click;
-	search_ok(0, "'asd' as search key leads to 0 elements");
+	$driver->find_child_element($search_window, 'cb_search_description')->click;
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(0, "search key = 'foo'\t=> 0 elements");
+	# close popup
+	$driver->find_child_element($driver->find_element('x-message-box', 'class'), 'x-btn-button', 'class')->click;
+
+	$driver->find_element('txtf_search_string-inputEl')->clear;
+	$driver->find_element('txtf_search_string-inputEl')->send_keys('Test9');
+	$driver->find_child_element($search_window, 'cb_search_keep_foreground')->click;
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+	search_result_ok(1, "search key = 'Test9'\t=> 1 elements");
+
+	ok(!$search_window->is_displayed, "search window vanished after search");
+	
+	$driver->find_element('btn_search_services')->click;
+	$search_tabs[0]->click_ok("switched to first search tab");
+
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
+	$driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->send_keys('10.2.2.2');
+	$driver->find_child_element($search_window, 'btn_search_start')->click;
+
+	# filter nach Suche
+
+	$driver->find_element('cb_show_names')->click;
+
+	my $grid_rules = $driver->find_element('grid_rules-body');
+	my @zeug = $driver->find_child_elements($grid_rules, 'x-grid-cell', 'class');
+	my $is_ok = 1;
+
+	$is_ok &= $zeug[0]->get_text eq "permit";	
+	$is_ok &= $zeug[1]->get_text eq "10.2.2.2";
+	$is_ok &= $zeug[2]->get_text eq "10.2.2.2";
+	$is_ok &= $zeug[3]->get_text eq "udp 83";
+
+	$driver->find_element('cb_filter_search')->click;
+	@zeug = $driver->find_child_elements($grid_rules, 'x-grid-cell', 'class');
+	
+	$is_ok &= $zeug[0]->get_text eq "permit";	
+	$is_ok &= $zeug[1]->get_text eq "10.1.0.10\n10.2.2.2";
+	$is_ok &= $zeug[2]->get_text eq "10.1.0.10\n10.2.2.2";
+	$is_ok &= $zeug[3]->get_text eq "udp 83";
+
+	ok($is_ok, "filter for search correcty");
+
 }
 
-sub search_ok{
+sub search_result_ok{
 	my ($expected, $ok_text) = @_;
 	eval{
-	ok( scalar $driver->find_child_elements($driver->find_element('grid_services-body'), './/tr', 'xpath') eq $expected, $ok_text);
-	} or do {BAIL_OUT("no grid found");}
-
+		my @grid = $driver->find_child_elements($driver->find_element('pnl_services-body'), './/tr', 'xpath');
+		ok( scalar @grid eq $expected, $ok_text);
+	};
+	if ($@) {BAIL_OUT("something went wrong in 'search_result_ok':\n$@")};
 }
 
-sub test4{
+sub service_details{
 	my $panel 	= shift;
 	my @sergri 	= @{(shift)};
 	my $det_bnt	= shift;
@@ -222,10 +343,8 @@ sub check_service_buttons {
 							"found button:\t'Nutzbare'");
 	$is_ok &= ok($driver->find_child_element($left_buttons[3], '//span[text()="Suche"]', 'xpath'),
 							"found button:\t'Suche'");
-	$is_ok &= ok($left_buttons[4]->get_attribute('id') =~ "print-all",
-							 "found button:\tprint all");
-	$is_ok &= ok($left_buttons[5]->get_attribute('id') =~ "printbutton",
-							 "found button:\tprint");
+	$is_ok &= ok($driver->find_element('btn_services_print_all'), "found button:\tprint all");
+	$is_ok &= ok($driver->find_element('btn_services_print'), "found button:\tprint");
 
 	# check buttons on right panel
 	$is_ok &= ok($driver->find_child_element($right_buttons[0], '//span[text()="Details zum Dienst"]','xpath'),

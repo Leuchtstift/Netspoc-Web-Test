@@ -3,9 +3,10 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More tests => 6;
+use Test::More tests => 7;
 use Selenium::Remote::Driver;
-use Selenium::Firefox::Profile;
+
+#use Selenium::Firefox::Profile;
 use Selenium::Remote::WDKeys;
 use Selenium::Waiter;
 use Test::Selenium::Remote::Driver;
@@ -41,14 +42,13 @@ my $driver =
 
 $driver->get('index.html');
 
+$driver->set_window_size(640, 480);
+
 if (find_login()) {
 
     $driver->send_keys_to_active_element('not_guest');
 
-# my $login_button = $driver->find_element( '//input[@value="Login"]', "xpath" );
-
-    $driver->click_element_ok('//input[@value="Login"]', "xpath",
-                                                        "login button");
+    $driver->click_element_ok('btn_login', "login button");
 
     ok($driver->get_current_url() =~ /backend\/login/,
          "login as not_guest failed");
@@ -57,9 +57,15 @@ if (find_login()) {
 
     $driver->send_keys_to_active_element('guest');
 
-    $driver->find_element('//input[@value="Login"]', "xpath")->click;
+    $driver->find_element('btn_login')->click;
 
     ok($driver->get_current_url() =~ /app.html/, "login as guest successeful");
+
+    my $logout = $driver->find_element('btn_logout');
+    $driver->mouse_move_to_location(element => $logout);
+    $driver->click;
+    sleep 1;
+    ok($driver->get_current_url() =~ /\/index\.html/, "logout successeful");
 }
 
 $driver->quit;
@@ -69,11 +75,8 @@ exit 0;
 # checks if elements needed to login are present.
 # return 1, if true.
 sub find_login {
-    my $a = $driver->find_element_ok('//input[@name="email"]', "xpath",
-                                                                     "found input box:\temail");
-    my $b = $driver->find_element_ok('//input[@name="pass"]', "xpath",
-                                                                     "found input box:\tpassword");
-    my $c = $driver->find_element_ok('//input[@value="Login"]', "xpath",
-                                                                     "found button:\tlogin");
+    my $a = $driver->find_element_ok('txtf_email', "found input box:\temail");
+    my $b = $driver->find_element_ok('txtf_password', "found input box:\tpassword");
+    my $c = $driver->find_element_ok('btn_login', "found button:\tlogin");
     return $a && $b && $c;
 }

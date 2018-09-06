@@ -212,7 +212,7 @@ $driver->find_element('btn_services_tab')->click;
 $driver->find_element('btn_own_services-btnIconEl')->click;
 
 my @service_grid =
-		$driver->find_child_elements($driver->find_element('grid_services'),
+		$driver->find_child_elements($driver->find_element('pnl_services'),
 																 'x-grid-cell', 'class');
 
 ok((scalar @service_grid == 1 and $service_grid[0]->get_text eq 'Test11'),
@@ -243,7 +243,7 @@ ok(
 $driver->find_element('btn_services_tab')->click;
 
 @service_grid =
-		$driver->find_child_elements($driver->find_element('grid_services'),
+		$driver->find_child_elements($driver->find_element('pnl_services'),
 																 'x-grid-cell', 'class');
 
 ok((scalar @service_grid == 12), "found services:\tall 12");

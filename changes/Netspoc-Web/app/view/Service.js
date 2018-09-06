@@ -51,6 +51,7 @@ Ext.define(
             var srv_props = Ext.create(
                 'PolicyWeb.view.panel.card.PrintActive', 
                 {
+                    id           : "pnl_service_details",
                     flex         : 7,
                     activeItem   : 0,
                     layoutConfig : {

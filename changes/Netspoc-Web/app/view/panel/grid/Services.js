@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.panel.grid.Services',
     {
-        id          : 'grid_services',
+        id          : 'pnl_services',
         extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
@@ -74,9 +74,11 @@ Ext.define(
             },
 */
             {
+                id    : 'btn_services_print_all',
                 xtype : 'print-all-button'
             },
             {
+                id    : 'btn_services_print',
                 xtype : 'printbutton'
             }
         ]

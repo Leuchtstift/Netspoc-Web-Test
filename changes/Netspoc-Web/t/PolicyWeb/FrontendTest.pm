@@ -46,15 +46,15 @@ sub login {
     my $base_url = "http://$SERVER:$port/index.html";
     $driver->get($base_url);
 
-    $driver->find_element('//input[@name="email"]', "xpath");
+    $driver->find_element('txtf_email');
     $driver->send_keys_to_active_element($name);
 
     if ($pass) {
-        $driver->find_element('//input[@name="pass"]', "xpath")->click;
+        $driver->find_element('txtf_password')->click;
         $driver->send_keys_to_active_element($pass);
     }
 
-    $driver->find_element('//input[@value="Login"]', "xpath")->click;
+    $driver->find_element('btn_login')->click;
 }
 
 sub login_as_guest {
@@ -301,6 +301,13 @@ sub is_order_after_change {
     }
 
     return 1;
+}
+
+
+sub move_click{
+    my ($driver, $e) = @_;
+    $driver->mouse_move_to_location(element => $e);
+    $driver->click;
 }
 
 1;
