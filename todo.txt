@@ -1,6 +1,4 @@
 Todo:
-
-	-	test 'Search' tab from services
 	
 	-	Diff
 	

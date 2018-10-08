@@ -70,7 +70,7 @@ Install the following Perl modules:
 	cpanm Time::HiRes
 	cpanm XML::XPath
 	cpanm Cpanel::JSON::XS
-
+	cpanm Selenium::Chrome
 
 
 htdocs:

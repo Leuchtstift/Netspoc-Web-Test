@@ -31,6 +31,7 @@ MODULES=(
 	Time::HiRes
 	XML::XPath
 	Cpanel::JSON::XS
+	Selenium::Chrome
 )
 
 MODUELS_SIZE=${#MODULES[@]}
